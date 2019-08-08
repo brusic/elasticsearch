@@ -28,10 +28,13 @@ import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.script.ScriptService;
+import org.elasticsearch.tasks.Task;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
+
+import java.io.IOException;
 
 public class TransportGetStoredScriptsAction extends TransportMasterNodeReadAction<GetStoredScriptsRequest,
         GetStoredScriptsResponse> {
@@ -39,11 +42,10 @@ public class TransportGetStoredScriptsAction extends TransportMasterNodeReadActi
     private final ScriptService scriptService;
 
     @Inject
-    public TransportGetStoredScriptsAction(Settings settings, TransportService transportService, ClusterService clusterService,
-                                           ThreadPool threadPool, ActionFilters actionFilters,
-                                           IndexNameExpressionResolver indexNameExpressionResolver, ScriptService scriptService) {
-        super(settings, GetStoredScriptsAction.NAME, transportService, clusterService, threadPool,
-            actionFilters,
+    public TransportGetStoredScriptsAction(TransportService transportService, ClusterService clusterService,
+                                          ThreadPool threadPool, ActionFilters actionFilters,
+                                          IndexNameExpressionResolver indexNameExpressionResolver, ScriptService scriptService) {
+        super(GetStoredScriptsAction.NAME, transportService, clusterService, threadPool, actionFilters,
             GetStoredScriptsRequest::new, indexNameExpressionResolver);
         this.scriptService = scriptService;
     }
@@ -55,11 +57,16 @@ public class TransportGetStoredScriptsAction extends TransportMasterNodeReadActi
 
     @Override
     protected GetStoredScriptsResponse newResponse() {
-        return new GetStoredScriptsResponse();
+        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
     }
 
     @Override
-    protected void masterOperation(GetStoredScriptsRequest request, ClusterState state,
+    protected GetStoredScriptsResponse read(StreamInput in) throws IOException {
+        return new GetStoredScriptsResponse(in);
+    }
+
+    @Override
+    protected void masterOperation(Task task, GetStoredScriptsRequest request, ClusterState state,
                                    ActionListener<GetStoredScriptsResponse> listener) throws Exception {
         listener.onResponse(new GetStoredScriptsResponse(scriptService.getStoredScripts(state)));
     }

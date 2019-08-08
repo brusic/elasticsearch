@@ -34,7 +34,22 @@ public class GetStoredScriptsResponse extends ActionResponse implements ToXConte
 
     private Map<String, StoredScriptSource> storedScripts;
 
-    GetStoredScriptsResponse() {
+    GetStoredScriptsResponse(StreamInput in) throws IOException {
+        super(in);
+
+        int size = in.readVInt();
+        storedScripts = new HashMap<>(size);
+        for (int i = 0 ; i < size ; i++) {
+            String id = in.readString();
+            storedScripts.put(id, new StoredScriptSource(in));
+        }
+
+//        int storedScriptsSize = in.readVInt();
+//        storedScripts = new HashMap<>(storedScriptsSize);
+//        for (int i = 0; i < storedScriptsSize; i++) {
+//            storedScripts.put(in.readString(), in.readBoolean());
+//        }
+//        this.storedScripts = storedScripts;
     }
 
     GetStoredScriptsResponse(Map<String, StoredScriptSource> storedScripts) {
@@ -62,21 +77,20 @@ public class GetStoredScriptsResponse extends ActionResponse implements ToXConte
         return builder;
     }
 
-    @Override
-    public void readFrom(StreamInput in) throws IOException {
-        super.readFrom(in);
-
-        int size = in.readVInt();
-        storedScripts = new HashMap<>(size);
-        for (int i = 0 ; i < size ; i++) {
-            String id = in.readString();
-            storedScripts.put(id, new StoredScriptSource(in));
-        }
-    }
+//    @Override
+//    public void readFrom(StreamInput in) throws IOException {
+//        super.readFrom(in);
+//
+//        int size = in.readVInt();
+//        storedScripts = new HashMap<>(size);
+//        for (int i = 0 ; i < size ; i++) {
+//            String id = in.readString();
+//            storedScripts.put(id, new StoredScriptSource(in));
+//        }
+//    }
 
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        super.writeTo(out);
         out.writeVInt(storedScripts.size());
         for (Map.Entry<String, StoredScriptSource> storedScript : storedScripts.entrySet()) {
             out.writeString(storedScript.getKey());

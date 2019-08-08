@@ -53,10 +53,10 @@ public class RestGetStoredScriptsAction extends BaseRestHandler {
     @Override
     public RestChannelConsumer prepareRequest(final RestRequest request, NodeClient client) throws IOException {
         GetStoredScriptsRequest getRequest = new GetStoredScriptsRequest();
-
+        getRequest.masterNodeTimeout(request.paramAsTime("master_timeout", getRequest.masterNodeTimeout()));
 
         return channel -> client.admin().cluster().getStoredScripts(getRequest, new
-            RestBuilderListener<GetStoredScriptsResponse>(channel) {
+            RestBuilderListener<>(channel) {
             @Override
             public RestResponse buildResponse(GetStoredScriptsResponse response, XContentBuilder builder)
                 throws Exception {
