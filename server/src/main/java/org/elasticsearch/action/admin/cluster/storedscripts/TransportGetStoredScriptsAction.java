@@ -56,11 +56,6 @@ public class TransportGetStoredScriptsAction extends TransportMasterNodeReadActi
     }
 
     @Override
-    protected GetStoredScriptsResponse newResponse() {
-        throw new UnsupportedOperationException("usage of Streamable is to be replaced by Writeable");
-    }
-
-    @Override
     protected GetStoredScriptsResponse read(StreamInput in) throws IOException {
         return new GetStoredScriptsResponse(in);
     }
