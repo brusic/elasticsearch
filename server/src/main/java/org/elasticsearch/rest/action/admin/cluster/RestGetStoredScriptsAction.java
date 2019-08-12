@@ -19,21 +19,14 @@
 package org.elasticsearch.rest.action.admin.cluster;
 
 import org.elasticsearch.action.admin.cluster.storedscripts.GetStoredScriptsRequest;
-import org.elasticsearch.action.admin.cluster.storedscripts.GetStoredScriptsResponse;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.rest.BaseRestHandler;
-import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.RestResponse;
-import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.rest.action.RestBuilderListener;
-import org.elasticsearch.script.StoredScriptSource;
+import org.elasticsearch.rest.action.RestStatusToXContentListener;
 
 import java.io.IOException;
-import java.util.Map;
 
 import static org.elasticsearch.rest.RestRequest.Method.GET;
 
@@ -55,37 +48,18 @@ public class RestGetStoredScriptsAction extends BaseRestHandler {
         GetStoredScriptsRequest getRequest = new GetStoredScriptsRequest();
         getRequest.masterNodeTimeout(request.paramAsTime("master_timeout", getRequest.masterNodeTimeout()));
 
-        return channel -> client.admin().cluster().getStoredScripts(getRequest, new
-            RestBuilderListener<>(channel) {
-            @Override
-            public RestResponse buildResponse(GetStoredScriptsResponse response, XContentBuilder builder)
-                throws Exception {
-                builder.startObject();
+//        final boolean implicitAll = getRequest.names().length == 0;
 
-                Map<String, StoredScriptSource> scripts = response.getStoredScripts();
-                if (scripts != null) {
-                    Map<String, StoredScriptSource> storedScripts = scripts;
-                    for (Map.Entry<String, StoredScriptSource> storedScript : storedScripts.entrySet()) {
-                        builder.startObject(storedScript.getKey());
-
-                        StoredScriptSource source = storedScript.getValue();
-                        builder.startObject(StoredScriptSource.SCRIPT_PARSE_FIELD.getPreferredName());
-                        builder.field(StoredScriptSource.LANG_PARSE_FIELD.getPreferredName(), source.getLang());
-                        builder.field(StoredScriptSource.SOURCE_PARSE_FIELD.getPreferredName(), source.getSource());
-
-                        if (!source.getOptions().isEmpty()) {
-                            builder.field(StoredScriptSource.OPTIONS_PARSE_FIELD.getPreferredName(), source.getOptions());
-                        }
-
-                        builder.endObject();
-                        builder.endObject();
-                    }
-                }
-
-                builder.endObject();
-
-                return new BytesRestResponse(RestStatus.OK, builder);
-            }
-        });
+        return channel -> client.admin().cluster().getStoredScripts(getRequest, new RestStatusToXContentListener<>(channel)
+//            {
+//            @Override
+//            protected RestStatus getStatus(final GetStoredScriptsResponse response)
+//            {
+//                Map<String, StoredScriptSource> storedScripts = response.getStoredScripts();
+//                final boolean templateExists = storedScripts != null && !storedScripts.isEmpty();
+//                return (templateExists || implicitAll) ? OK : NOT_FOUND;
+//            }
+//        }
+        );
     }
 }

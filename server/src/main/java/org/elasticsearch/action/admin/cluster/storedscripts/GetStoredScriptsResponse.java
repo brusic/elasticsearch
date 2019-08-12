@@ -22,15 +22,16 @@ package org.elasticsearch.action.admin.cluster.storedscripts;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.xcontent.ToXContentObject;
+import org.elasticsearch.common.xcontent.StatusToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.StoredScriptSource;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetStoredScriptsResponse extends ActionResponse implements ToXContentObject {
+public class GetStoredScriptsResponse extends ActionResponse implements StatusToXContentObject {
 
     private Map<String, StoredScriptSource> storedScripts;
 
@@ -54,17 +55,22 @@ public class GetStoredScriptsResponse extends ActionResponse implements ToXConte
     }
 
     @Override
+    public RestStatus status() {
+        return storedScripts != null ? RestStatus.OK : RestStatus.NOT_FOUND;
+    }
+
+    @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject();
-        for (Map.Entry<String, StoredScriptSource> storedScript : getStoredScripts().entrySet()) {
 
-            builder.startObject(storedScript.getKey());
-
-            builder.startObject();
-            storedScript.getValue().toXContent(builder, params);
-            builder.endObject();
-
-            builder.endObject();
+        Map<String, StoredScriptSource> storedScripts = getStoredScripts();
+        if (storedScripts != null) {
+            for (Map.Entry<String, StoredScriptSource> storedScript : storedScripts.entrySet()) {
+                builder.startObject(storedScript.getKey());
+                builder.field(StoredScriptSource.SCRIPT_PARSE_FIELD.getPreferredName());
+                storedScript.getValue().toXContent(builder, params);
+                builder.endObject();
+            }
         }
         builder.endObject();
         return builder;

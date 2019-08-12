@@ -26,7 +26,6 @@ public class GetStoredScriptsRequestBuilder extends
     MasterNodeReadOperationRequestBuilder<GetStoredScriptsRequest,
         GetStoredScriptsResponse, GetStoredScriptsRequestBuilder> {
 
-
     public GetStoredScriptsRequestBuilder(ElasticsearchClient client, GetStoredScriptsAction action) {
         super(client, action, new GetStoredScriptsRequest());
     }

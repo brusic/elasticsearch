@@ -27,6 +27,7 @@ import java.io.IOException;
 
 public class GetStoredScriptsRequest extends MasterNodeReadRequest<GetStoredScriptsRequest> {
 
+//    private String[] names;
 
     public GetStoredScriptsRequest() {
         super();
@@ -34,7 +35,15 @@ public class GetStoredScriptsRequest extends MasterNodeReadRequest<GetStoredScri
 
     public GetStoredScriptsRequest(StreamInput in) throws IOException {
         super(in);
+//        names = in.readStringArray();
     }
+
+//    /**
+//     * The names of the search templates.
+//     */
+//    public String[] names() {
+//        return this.names;
+//    }
 
     @Override
     public ActionRequestValidationException validate() {
