@@ -43,13 +43,6 @@ public class GetStoredScriptsResponse extends ActionResponse implements ToXConte
             String id = in.readString();
             storedScripts.put(id, new StoredScriptSource(in));
         }
-
-//        int storedScriptsSize = in.readVInt();
-//        storedScripts = new HashMap<>(storedScriptsSize);
-//        for (int i = 0; i < storedScriptsSize; i++) {
-//            storedScripts.put(in.readString(), in.readBoolean());
-//        }
-//        this.storedScripts = storedScripts;
     }
 
     GetStoredScriptsResponse(Map<String, StoredScriptSource> storedScripts) {

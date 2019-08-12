@@ -62,21 +62,24 @@ public class RestGetStoredScriptsAction extends BaseRestHandler {
                 throws Exception {
                 builder.startObject();
 
-                Map<String, StoredScriptSource> storedScripts = response.getStoredScripts();
-                for (Map.Entry<String, StoredScriptSource> storedScript : storedScripts.entrySet()) {
-                    builder.startObject(storedScript.getKey());
+                Map<String, StoredScriptSource> scripts = response.getStoredScripts();
+                if (scripts != null) {
+                    Map<String, StoredScriptSource> storedScripts = scripts;
+                    for (Map.Entry<String, StoredScriptSource> storedScript : storedScripts.entrySet()) {
+                        builder.startObject(storedScript.getKey());
 
-                    StoredScriptSource source = storedScript.getValue();
-                    builder.startObject(StoredScriptSource.SCRIPT_PARSE_FIELD.getPreferredName());
-                    builder.field(StoredScriptSource.LANG_PARSE_FIELD.getPreferredName(), source.getLang());
-                    builder.field(StoredScriptSource.SOURCE_PARSE_FIELD.getPreferredName(), source.getSource());
+                        StoredScriptSource source = storedScript.getValue();
+                        builder.startObject(StoredScriptSource.SCRIPT_PARSE_FIELD.getPreferredName());
+                        builder.field(StoredScriptSource.LANG_PARSE_FIELD.getPreferredName(), source.getLang());
+                        builder.field(StoredScriptSource.SOURCE_PARSE_FIELD.getPreferredName(), source.getSource());
 
-                    if (!source.getOptions().isEmpty()) {
-                        builder.field(StoredScriptSource.OPTIONS_PARSE_FIELD.getPreferredName(), source.getOptions());
+                        if (!source.getOptions().isEmpty()) {
+                            builder.field(StoredScriptSource.OPTIONS_PARSE_FIELD.getPreferredName(), source.getOptions());
+                        }
+
+                        builder.endObject();
+                        builder.endObject();
                     }
-
-                    builder.endObject();
-                    builder.endObject();
                 }
 
                 builder.endObject();
