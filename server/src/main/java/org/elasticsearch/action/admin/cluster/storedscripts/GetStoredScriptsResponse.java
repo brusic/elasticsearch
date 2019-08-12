@@ -70,18 +70,6 @@ public class GetStoredScriptsResponse extends ActionResponse implements ToXConte
         return builder;
     }
 
-//    @Override
-//    public void readFrom(StreamInput in) throws IOException {
-//        super.readFrom(in);
-//
-//        int size = in.readVInt();
-//        storedScripts = new HashMap<>(size);
-//        for (int i = 0 ; i < size ; i++) {
-//            String id = in.readString();
-//            storedScripts.put(id, new StoredScriptSource(in));
-//        }
-//    }
-
     @Override
     public void writeTo(StreamOutput out) throws IOException {
         out.writeVInt(storedScripts.size());
