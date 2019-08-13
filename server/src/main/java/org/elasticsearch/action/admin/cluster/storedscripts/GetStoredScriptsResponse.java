@@ -22,16 +22,15 @@ package org.elasticsearch.action.admin.cluster.storedscripts;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
-import org.elasticsearch.common.xcontent.StatusToXContentObject;
+import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.StoredScriptSource;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetStoredScriptsResponse extends ActionResponse implements StatusToXContentObject {
+public class GetStoredScriptsResponse extends ActionResponse implements ToXContentObject {
 
     private Map<String, StoredScriptSource> storedScripts;
 
@@ -52,11 +51,6 @@ public class GetStoredScriptsResponse extends ActionResponse implements StatusTo
 
     public Map<String, StoredScriptSource> getStoredScripts() {
         return storedScripts;
-    }
-
-    @Override
-    public RestStatus status() {
-        return storedScripts != null ? RestStatus.OK : RestStatus.NOT_FOUND;
     }
 
     @Override

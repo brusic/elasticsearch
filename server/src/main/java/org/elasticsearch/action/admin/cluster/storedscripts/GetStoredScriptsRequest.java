@@ -22,28 +22,39 @@ package org.elasticsearch.action.admin.cluster.storedscripts;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.action.support.master.MasterNodeReadRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
+import org.elasticsearch.common.io.stream.StreamOutput;
 
 import java.io.IOException;
 
 public class GetStoredScriptsRequest extends MasterNodeReadRequest<GetStoredScriptsRequest> {
 
-//    private String[] names;
+    private String[] names;
 
     public GetStoredScriptsRequest() {
         super();
     }
 
-    public GetStoredScriptsRequest(StreamInput in) throws IOException {
-        super(in);
-//        names = in.readStringArray();
+    public GetStoredScriptsRequest(String... names) {
+        this.names = names;
     }
 
-//    /**
-//     * The names of the search templates.
-//     */
-//    public String[] names() {
-//        return this.names;
-//    }
+    public GetStoredScriptsRequest(StreamInput in) throws IOException {
+        super(in);
+        names = in.readStringArray();
+    }
+
+    /**
+     * The names of the search templates.
+     */
+    public String[] names() {
+        return this.names;
+    }
+
+    @Override
+    public void writeTo(StreamOutput out) throws IOException {
+        super.writeTo(out);
+        out.writeStringArray(names);
+    }
 
     @Override
     public ActionRequestValidationException validate() {

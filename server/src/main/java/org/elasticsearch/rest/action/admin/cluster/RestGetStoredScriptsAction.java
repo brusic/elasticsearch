@@ -19,16 +19,24 @@
 package org.elasticsearch.rest.action.admin.cluster;
 
 import org.elasticsearch.action.admin.cluster.storedscripts.GetStoredScriptsRequest;
+import org.elasticsearch.action.admin.cluster.storedscripts.GetStoredScriptsResponse;
 import org.elasticsearch.client.node.NodeClient;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.action.RestStatusToXContentListener;
+import org.elasticsearch.rest.RestStatus;
+import org.elasticsearch.rest.action.RestToXContentListener;
+import org.elasticsearch.script.StoredScriptSource;
 
 import java.io.IOException;
+import java.util.Map;
 
 import static org.elasticsearch.rest.RestRequest.Method.GET;
+import static org.elasticsearch.rest.RestRequest.Method.HEAD;
+import static org.elasticsearch.rest.RestStatus.NOT_FOUND;
+import static org.elasticsearch.rest.RestStatus.OK;
 
 public class RestGetStoredScriptsAction extends BaseRestHandler {
 
@@ -36,6 +44,8 @@ public class RestGetStoredScriptsAction extends BaseRestHandler {
         super(settings);
 
         controller.registerHandler(GET, "/_scripts", this);
+        controller.registerHandler(GET, "/_script/{name}", this);
+        controller.registerHandler(HEAD, "/_script/{name}", this);
     }
 
     @Override
@@ -45,21 +55,21 @@ public class RestGetStoredScriptsAction extends BaseRestHandler {
 
     @Override
     public RestChannelConsumer prepareRequest(final RestRequest request, NodeClient client) throws IOException {
-        GetStoredScriptsRequest getRequest = new GetStoredScriptsRequest();
+        final String[] names = Strings.splitStringByCommaToArray(request.param("name"));
+
+        GetStoredScriptsRequest getRequest = new GetStoredScriptsRequest(names);
         getRequest.masterNodeTimeout(request.paramAsTime("master_timeout", getRequest.masterNodeTimeout()));
 
-//        final boolean implicitAll = getRequest.names().length == 0;
+        final boolean implicitAll = getRequest.names().length == 0;
 
-        return channel -> client.admin().cluster().getStoredScripts(getRequest, new RestStatusToXContentListener<>(channel)
-//            {
-//            @Override
-//            protected RestStatus getStatus(final GetStoredScriptsResponse response)
-//            {
-//                Map<String, StoredScriptSource> storedScripts = response.getStoredScripts();
-//                final boolean templateExists = storedScripts != null && !storedScripts.isEmpty();
-//                return (templateExists || implicitAll) ? OK : NOT_FOUND;
-//            }
-//        }
-        );
+        return channel -> client.admin().cluster().getStoredScripts(getRequest, new RestToXContentListener<>(channel) {
+            @Override
+            protected RestStatus getStatus(final GetStoredScriptsResponse response)
+            {
+                Map<String, StoredScriptSource> storedScripts = response.getStoredScripts();
+                final boolean templateExists = storedScripts != null && !storedScripts.isEmpty();
+                return (templateExists || implicitAll) ? OK : NOT_FOUND;
+            }
+        });
     }
 }
