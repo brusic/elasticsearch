@@ -45,6 +45,7 @@ public class ClientYamlSuiteRestApiParserTests extends AbstractClientYamlTestFra
             assertThat(next.getMethods()[0], equalTo("POST"));
             assertThat(next.getParts().size(), equalTo(2));
             assertThat(next.getParts(), containsInAnyOrder("index", "type"));
+            assertFalse(next.isDeprecated());
         }
         {
             ClientYamlSuiteRestApi.Path next = iterator.next();
@@ -53,6 +54,7 @@ public class ClientYamlSuiteRestApiParserTests extends AbstractClientYamlTestFra
             assertThat(next.getMethods()[0], equalTo("PUT"));
             assertThat(next.getParts().size(), equalTo(3));
             assertThat(next.getParts(), containsInAnyOrder("id", "index", "type"));
+            assertTrue(next.isDeprecated());
         }
         assertThat(restApi.getParams().size(), equalTo(4));
         assertThat(restApi.getParams().keySet(), containsInAnyOrder("wait_for_active_shards", "op_type", "routing", "refresh"));

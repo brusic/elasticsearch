@@ -104,7 +104,13 @@ public class ClientYamlTestClient implements Closeable {
 
         List<ClientYamlSuiteRestApi.Path> bestPaths = restApi.getBestMatchingPaths(params.keySet());
         //the rest path to use is randomized out of the matching ones (if more than one)
-        ClientYamlSuiteRestApi.Path path = RandomizedTest.randomFrom(bestPaths);
+        // first choose amongst non-deprecated paths
+        List<ClientYamlSuiteRestApi.Path> paths = bestPaths.stream().filter(path -> !path.isDeprecated()).collect(Collectors.toList());
+        // default to all paths if all are deprecated
+        if (paths.isEmpty()) {
+            paths = bestPaths;
+        }
+        ClientYamlSuiteRestApi.Path path = RandomizedTest.randomFrom(paths);
 
         //divide params between ones that go within query string and ones that go within path
         Map<String, String> pathParts = new HashMap<>();
