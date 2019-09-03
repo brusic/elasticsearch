@@ -92,7 +92,7 @@ public class StoredScriptsIT extends ESRestHighLevelClientTestCase {
             new PutStoredScriptRequest(id, "score", new BytesArray("{}"), XContentType.JSON, scriptSource);
         assertAcked(execute(request, highLevelClient()::putScript, highLevelClient()::putScriptAsync));
 
-        Map<String, Object> script = getAsMap("/_scripts/" + id);
+        Map<String, Object> script = getAsMap("/_script/" + id);
         assertThat(extractValue("_id", script), equalTo(id));
         assertThat(extractValue("found", script), equalTo(true));
         assertThat(extractValue("script.lang", script), equalTo("painless"));

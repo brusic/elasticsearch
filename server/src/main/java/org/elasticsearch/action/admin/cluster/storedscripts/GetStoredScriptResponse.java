@@ -26,23 +26,24 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.ConstructingObjectParser;
 import org.elasticsearch.common.xcontent.ObjectParser;
-import org.elasticsearch.common.xcontent.StatusToXContentObject;
+import org.elasticsearch.common.xcontent.ToXContentObject;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
-import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.script.StoredScriptSource;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.elasticsearch.common.xcontent.ConstructingObjectParser.constructorArg;
 import static org.elasticsearch.common.xcontent.ConstructingObjectParser.optionalConstructorArg;
 
-public class GetStoredScriptResponse extends ActionResponse implements StatusToXContentObject {
+public class GetStoredScriptResponse extends ActionResponse implements ToXContentObject {
 
-    public static final ParseField _ID_PARSE_FIELD = new ParseField("_id");
-    public static final ParseField FOUND_PARSE_FIELD = new ParseField("found");
-    public static final ParseField SCRIPT = new ParseField("script");
+    private static final ParseField _ID_PARSE_FIELD = new ParseField("_id");
+    private static final ParseField FOUND_PARSE_FIELD = new ParseField("found");
+    private static final ParseField SCRIPT = new ParseField("script");
 
     private static final ConstructingObjectParser<GetStoredScriptResponse, String> PARSER =
         new ConstructingObjectParser<>("GetStoredScriptResponse",
@@ -63,47 +64,106 @@ public class GetStoredScriptResponse extends ActionResponse implements StatusToX
             SCRIPT, ObjectParser.ValueType.OBJECT);
     }
 
-    private String id;
-    private StoredScriptSource source;
+    private final Map<String, StoredScriptSource> storedScripts;
+    private final String[] requestedIds;
 
-    public GetStoredScriptResponse(StreamInput in) throws IOException {
+    GetStoredScriptResponse(StreamInput in) throws IOException {
         super(in);
 
-        if (in.readBoolean()) {
-            source = new StoredScriptSource(in);
+        if (in.getVersion().onOrAfter(Version.V_7_4_0)) {
+            storedScripts = in.readMap(StreamInput::readString, StoredScriptSource::new);
         } else {
-            source = null;
+            StoredScriptSource source;
+            if (in.readBoolean()) {
+                source = new StoredScriptSource(in);
+            } else {
+                source = null;
+            }
+            String id = in.readString();
+            storedScripts = new HashMap<>(1);
+            storedScripts.put(id, source);
         }
-
-        if (in.getVersion().onOrAfter(Version.V_6_4_0)) {
-            id = in.readString();
-        }
+        requestedIds = new String[0];
     }
 
     GetStoredScriptResponse(String id, StoredScriptSource source) {
-        this.id = id;
-        this.source = source;
+        this.storedScripts = new HashMap<>();
+        storedScripts.put(id, source);
+        requestedIds = new String[]{ id };
     }
 
-    public String getId() {
-        return id;
+    GetStoredScriptResponse(String[] requestedIds, Map<String, StoredScriptSource> storedScripts) {
+        this.requestedIds = requestedIds;
+        this.storedScripts = storedScripts;
+    }
+
+    public Map<String, StoredScriptSource> getStoredScripts() {
+        return storedScripts;
     }
 
     /**
+     * @deprecated - Needed for backwards compatibility.
+     * Use {@link #getStoredScripts()} instead
+     *
      * @return if a stored script and if not found <code>null</code>
      */
+    @Deprecated
     public StoredScriptSource getSource() {
-        return source;
-    }
-
-    @Override
-    public RestStatus status() {
-        return source != null ? RestStatus.OK : RestStatus.NOT_FOUND;
+        return storedScripts.entrySet().iterator().next().getValue();
     }
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+        boolean isSingleId = requestedIds.length == 1 && storedScripts.size() == 1;
+        if (!params.paramAsBoolean("new_format", false) && isSingleId) {
+            return toXContentPre80(builder, params);
+        }
+
         builder.startObject();
+        Map<String, StoredScriptSource> storedScripts = getStoredScripts();
+        if (storedScripts != null) {
+            for (Map.Entry<String, StoredScriptSource> storedScript : storedScripts.entrySet()) {
+                builder.field(storedScript.getKey());
+                storedScript.getValue().toXContent(builder, params);
+            }
+        }
+        builder.endObject();
+        return builder;
+    }
+
+    /**
+     * The original format is the default prior to 8.0 and needed for backwards compatibility
+     * @see #fromXContentNewFormat(XContentParser)
+     */
+    @Deprecated
+    public static GetStoredScriptResponse fromXContent(XContentParser parser) throws IOException {
+        return PARSER.parse(parser, null);
+    }
+
+    public static GetStoredScriptResponse fromXContentNewFormat(XContentParser parser) throws IOException {
+        final Map<String, StoredScriptSource> storedScripts = new HashMap<>();
+        for (XContentParser.Token token = parser.nextToken(); token != XContentParser.Token.END_OBJECT; token = parser.nextToken()) {
+            if (token == XContentParser.Token.FIELD_NAME) {
+                String name = parser.currentName();
+                assert parser.nextToken() == XContentParser.Token.START_OBJECT;
+                StoredScriptSource storedScriptSource = StoredScriptSource.fromXContent(parser, false);
+                storedScripts.put(name, storedScriptSource);
+            }
+        }
+        String[] requestedIds = storedScripts.keySet().stream().toArray(String[]::new);
+        return new GetStoredScriptResponse(requestedIds, storedScripts);
+    }
+
+    @Deprecated
+    private XContentBuilder toXContentPre80(XContentBuilder builder, Params params) throws IOException {
+        builder.startObject();
+
+        String id = requestedIds[0];
+        StoredScriptSource source = null;
+        if (!storedScripts.isEmpty()) {
+            Map.Entry<String, StoredScriptSource> entry = storedScripts.entrySet().iterator().next();
+            source = entry.getValue();
+        }
 
         builder.field(_ID_PARSE_FIELD.getPreferredName(), id);
         builder.field(FOUND_PARSE_FIELD.getPreferredName(), source != null);
@@ -116,20 +176,28 @@ public class GetStoredScriptResponse extends ActionResponse implements StatusToX
         return builder;
     }
 
-    public static GetStoredScriptResponse fromXContent(XContentParser parser) throws IOException {
-        return PARSER.parse(parser, null);
-    }
-
     @Override
     public void writeTo(StreamOutput out) throws IOException {
-        if (source == null) {
-            out.writeBoolean(false);
+        if (out.getVersion().onOrAfter(Version.V_7_4_0)) {
+            if (storedScripts == null ) {
+                out.writeVInt(0);
+                return;
+            }
+
+            out.writeVInt(storedScripts.size());
+            for (Map.Entry<String, StoredScriptSource> storedScript : storedScripts.entrySet()) {
+                out.writeString(storedScript.getKey());
+                storedScript.getValue().writeTo(out);
+            }
         } else {
-            out.writeBoolean(true);
-            source.writeTo(out);
-        }
-        if (out.getVersion().onOrAfter(Version.V_6_4_0)) {
-            out.writeString(id);
+            Map.Entry<String, StoredScriptSource> entry = storedScripts.entrySet().iterator().next();
+            if (entry.getValue() == null) {
+                out.writeBoolean(false);
+            } else {
+                out.writeBoolean(true);
+                entry.getValue().writeTo(out);
+            }
+            out.writeString(entry.getKey());
         }
     }
 
@@ -138,12 +206,11 @@ public class GetStoredScriptResponse extends ActionResponse implements StatusToX
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         GetStoredScriptResponse that = (GetStoredScriptResponse) o;
-        return Objects.equals(id, that.id) &&
-            Objects.equals(source, that.source);
+        return Objects.equals(storedScripts, that.storedScripts);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, source);
+        return storedScripts.hashCode();
     }
 }

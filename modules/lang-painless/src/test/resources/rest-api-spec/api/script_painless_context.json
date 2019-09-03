@@ -1,10 +1,10 @@
 {
-  "scripts_painless_context": {
+  "script_painless_context": {
     "stability": "experimental",
     "url": {
       "paths": [
         {
-          "path": "/_scripts/painless/_context",
+          "path": "/_script/painless/_context",
           "methods": ["GET"],
           "parts": {}
         }

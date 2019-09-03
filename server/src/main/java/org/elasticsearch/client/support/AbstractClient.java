@@ -1170,6 +1170,12 @@ public abstract class AbstractClient implements Client {
         }
 
         @Override
+        public GetStoredScriptRequestBuilder prepareGetStoredScript(String... ids) {
+            return prepareGetStoredScript().setIds(ids);
+        }
+
+        @Override
+        @Deprecated
         public GetStoredScriptRequestBuilder prepareGetStoredScript(String id) {
             return prepareGetStoredScript().setId(id);
         }

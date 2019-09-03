@@ -538,6 +538,16 @@ public class ScriptService implements Closeable, ClusterStateApplier {
         }
     }
 
+    public Map<String, StoredScriptSource> getStoredScripts(ClusterState state) {
+        ScriptMetaData scriptMetadata = state.metaData().custom(ScriptMetaData.TYPE);
+
+        if (scriptMetadata != null) {
+            return scriptMetadata.getStoredScripts();
+        } else {
+            return null;
+        }
+    }
+
     public ScriptStats stats() {
         return scriptMetrics.stats();
     }
